@@ -4,6 +4,7 @@ import 'package:flutterapp/Screens/splash_screen.dart';
 import 'package:flutterapp/Screens/forgot_password.dart';
 import 'package:flutterapp/Screens/home_screen.dart';
 import 'package:flutterapp/Screens/profile_screen.dart';
+import 'package:flutterapp/user_list_screen.dart';
 
 void main() => runApp(MyApp());
 

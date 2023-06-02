@@ -1,3 +1,7 @@
+import 'dart:io';
+import 'package:pdf/widgets.dart' as pw;
+
+import 'package:csv/csv.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutterapp/Screens/download_data.dart';
@@ -7,23 +11,155 @@ import 'package:flutterapp/Screens/upload_data.dart';
 import 'package:flutterapp/Screens/setup_screen.dart';
 import 'package:flutterapp/Screens/settings_screen.dart';
 import 'package:flutterapp/Screens/profile_screen.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:printing/printing.dart';
 
 class HomeScreen extends StatelessWidget {
-  final _dateController = TextEditingController();
-  final _qtyController = TextEditingController();
-  final _unitPriceController = TextEditingController();
-  final _totalController = TextEditingController();
+  final dateController = TextEditingController();
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Receipt Printer',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: ReceiptPrinterScreen(),
+    );
+  }
+}
+
+class ReceiptPrinterScreen extends StatefulWidget {
+  @override
+  _ReceiptPrinterScreenState createState() => _ReceiptPrinterScreenState();
+}
+
+class _ReceiptPrinterScreenState extends State<ReceiptPrinterScreen> {
+  TextEditingController barcodeController = TextEditingController();
+  TextEditingController trxnoController = TextEditingController();
+  TextEditingController dateController = TextEditingController();
+  TextEditingController vendornameController = TextEditingController();
+  TextEditingController quantityController = TextEditingController();
+  TextEditingController unitpriceController = TextEditingController();
+  TextEditingController totalAmountController = TextEditingController();
 
   void _computeTotal() {
-    final qty = int.tryParse(_qtyController.text) ?? 0;
-    final unitPrice = double.tryParse(_unitPriceController.text) ?? 0.0;
+    final qty = int.tryParse(quantityController.text) ?? 0;
+    final unitPrice = double.tryParse(unitpriceController.text) ?? 0.0;
     final total = qty * unitPrice;
-    _totalController.text = total.toStringAsFixed(2);
+    totalAmountController.text = total.toStringAsFixed(2);
   }
+  void _createPdf() async {
+    final doc = pw.Document();
+
+    doc.addPage(
+      pw.Page(
+        build: (pw.Context context) {
+          return pw.Container(
+            padding: pw.EdgeInsets.all(20),
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Text('BARANGAY BAYAMBANG', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
+                pw.SizedBox(height: 20),
+                pw.Text('Receipt', style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
+                pw.SizedBox(height: 20),
+                pw.Text('Barcode: ${barcodeController.text}', style: pw.TextStyle(fontSize: 16)),
+                pw.SizedBox(height: 10),
+                pw.Text('Transaction Number: ${trxnoController.text}', style: pw.TextStyle(fontSize: 16)),
+                pw.SizedBox(height: 10),
+                pw.Text('Date: ${dateController.text}', style: pw.TextStyle(fontSize: 16)),
+                pw.SizedBox(height: 10),
+                pw.Text('Vendor Name: ${vendornameController.text}', style: pw.TextStyle(fontSize: 16)),
+                pw.SizedBox(height: 10),
+                pw.Text('Quantity: ${quantityController.text}', style: pw.TextStyle(fontSize: 16)),
+                pw.SizedBox(height: 10),
+                pw.Text('Unit Price: ${unitpriceController.text}', style: pw.TextStyle(fontSize: 16)),
+                pw.SizedBox(height: 10),
+                pw.Text('Total Amount: ${totalAmountController.text}', style: pw.TextStyle(fontSize: 16)),
+                pw.SizedBox(height: 20),
+                pw.Divider(),
+                pw.SizedBox(height: 20),
+                pw.Text('Thank you for your purchase!', style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+
+    final pdfBytes = await doc.save();
+
+    await Printing.sharePdf(bytes: pdfBytes);
+  }
+
+
+  @override
+  void dispose() {
+    barcodeController.dispose();
+    trxnoController.dispose();
+    dateController.dispose();
+    vendornameController.dispose();
+    quantityController.dispose();
+    unitpriceController.dispose();
+    totalAmountController.dispose();
+    super.dispose();
+  }
+
+  Future<String> get _localPath async {
+    final directory = await getExternalStorageDirectory();
+    final now = DateTime.now();
+    final dateFormat = DateFormat('yyyy-MM-dd');
+    final folderPath = '${directory!.path}/${dateFormat.format(now)}'; // com.example.publicmarket_sqlite/2023-05-30
+    await Directory(folderPath).create(recursive: true);
+    return folderPath;
+  }
+
+  Future<File> get _localFile async {
+    final path = await _localPath;
+    final trxno = trxnoController.text;
+    return File('$path/receipt_$trxno.sql');
+  }
+
+
+
+  void printReceipt() async {
+    String barcode = barcodeController.text;
+    String trxno = trxnoController.text;
+    String date = dateController.text;
+    String vendorname = vendornameController.text;
+    double? unitprice = double.tryParse(unitpriceController.text);
+    int? quantity = int.tryParse(quantityController.text);
+
+    if (barcode != null &&
+        trxno != null &&
+        date != null &&
+        vendorname != null &&
+        quantity != null) {
+      double totalAmount = quantity * unitprice!;
+
+      String sqlData = '''
+      INSERT INTO receipts (Barcode, TrxNo, Date, VendorName, Quantity, UnitPrice, Total)
+      VALUES ('$barcode', '$trxno', '$date', '$vendorname', $quantity, $unitprice, $totalAmount);
+    ''';
+
+      final file = await _localFile;
+      await file.writeAsString(sqlData);
+
+      setState(() {
+        totalAmountController.text = totalAmount.toStringAsFixed(2);
+      });
+      print('Receipt printed to ${file.path}');
+
+    } else {
+      print('Please fill in all the fields.');
+    }
+    _createPdf();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
         iconTheme: IconThemeData(
@@ -155,6 +291,7 @@ class HomeScreen extends StatelessWidget {
           ),
         ),
       ),
+
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
@@ -175,7 +312,8 @@ class HomeScreen extends StatelessWidget {
                   TextInputType.number, // set the keyboard to numeric only
                   inputFormatters: [
                     FilteringTextInputFormatter.digitsOnly
-                  ], // only allow digits
+                  ], // only
+                  controller: barcodeController,// allow digits
                   decoration: InputDecoration(
                     labelText: 'Barcode',
                     border: OutlineInputBorder(
@@ -194,9 +332,10 @@ class HomeScreen extends StatelessWidget {
                             .number, // set the keyboard to numeric only
                         inputFormatters: [
                           FilteringTextInputFormatter.digitsOnly
-                        ], // only allow digits
+                        ], //
+                        controller: trxnoController,// only allow digits
                         decoration: InputDecoration(
-                          labelText: 'No.',
+                          labelText: ' Trx No.',
                           border: OutlineInputBorder(
                             borderRadius:
                             BorderRadius.all(Radius.circular(10.0)),
@@ -209,6 +348,7 @@ class HomeScreen extends StatelessWidget {
                       flex: 1,
                       child: TextField(
                         readOnly: true,
+                        // controller: dateController,
                         decoration: InputDecoration(
                           labelText: 'Date',
                           border: OutlineInputBorder(
@@ -217,8 +357,7 @@ class HomeScreen extends StatelessWidget {
                           ),
                           suffixIcon: Icon(Icons.calendar_today),
                         ),
-                        controller:
-                        _dateController, // set the controller for the text field
+                        controller: dateController, // set the controller for the text field
                         onTap: () async {
                           final DateTime? selectedDate = await showDatePicker(
                             context: context,
@@ -230,7 +369,7 @@ class HomeScreen extends StatelessWidget {
                             // update the value of the text field with the selected date
                             String formattedDate =
                             DateFormat('MM/dd/yyyy').format(selectedDate);
-                            _dateController.text = formattedDate;
+                            dateController.text = formattedDate;
                           }
                         },
                       ),
@@ -239,6 +378,7 @@ class HomeScreen extends StatelessWidget {
                 ),
                 SizedBox(height: 10),
                 TextField(
+                  controller: vendornameController,
                   decoration: InputDecoration(
                     labelText: 'Vendor Name',
                     border: OutlineInputBorder(
@@ -298,7 +438,7 @@ class HomeScreen extends StatelessWidget {
                               Container(
                                 height: 100,
                                 child: TextField(
-                                  controller: _qtyController,
+                                  controller: quantityController,
                                   keyboardType: TextInputType.number,
                                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                                   onChanged: (_) => _computeTotal(),
@@ -309,7 +449,7 @@ class HomeScreen extends StatelessWidget {
                               Container(
                                 height: 50,
                                 child: TextField(
-                                  controller: _unitPriceController,
+                                  controller: unitpriceController,
                                   keyboardType: TextInputType.numberWithOptions(decimal: true),
                                   onChanged: (_) => _computeTotal(),
                                 ),
@@ -319,7 +459,7 @@ class HomeScreen extends StatelessWidget {
                               Container(
                                 height: 80,
                                 child: TextFormField(
-                                  controller: _totalController,
+                                  controller: totalAmountController,
                                   readOnly: true,
                                 ),
                               ),
@@ -330,6 +470,7 @@ class HomeScreen extends StatelessWidget {
                     ),
                   ],
                 ),
+
 
 
 
@@ -360,7 +501,7 @@ class HomeScreen extends StatelessWidget {
                               ),
                               Expanded(
                                 child: TextFormField(
-                                  controller: _totalController,
+                                  controller: totalAmountController,
                                   readOnly: true,
                                   textAlign: TextAlign.right,
                                   style: TextStyle(
@@ -379,19 +520,7 @@ class HomeScreen extends StatelessWidget {
                 //grandtotal
                 SizedBox(height: 20),
                 ElevatedButton(
-                  onPressed: () {
-                    // Add your printing logic here
-                    print('Printing...');
-                  },
-                  style: ElevatedButton.styleFrom(
-                    primary: Color(0xFF03519D), // Set button color to #03519D
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30.0),
-                    ),
-                    padding:
-                    EdgeInsets.symmetric(vertical: 15.0, horizontal: 20.0),
-                    textStyle: TextStyle(fontSize: 20.0),
-                  ),
+                  onPressed: printReceipt,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -401,11 +530,16 @@ class HomeScreen extends StatelessWidget {
                     ],
                   ),
                 ),
+
               ],
             ),
           ),
         ),
       ),
+
     );
   }
 }
+
+
+

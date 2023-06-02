@@ -6,15 +6,19 @@ class ForgotPasswordScreen extends StatelessWidget {
   const ForgotPasswordScreen({Key? key}) : super(key: key);
 
   void sendResetEmail(BuildContext context, String email) async {
-    String username = 'flutder.2023@gmail.com';
-    String password = 'phiearoauttoylop';
+    String username = 'crisander.publicmarket@gmail.com';
+    String password = 'hwzwtlrxiczruiwf';
 
     final smtpServer = gmail(username, password);
     final message = Message()
       ..from = Address(username, 'PUBLIC MARKET TEST')
       ..recipients.add(email)
       ..subject = 'Reset Password'
-      ..text = 'Instructions for resetting your password...';
+      ..html = '''
+          <p>Instructions for resetting your password:</p>
+          <p>Click the button below to reset your password:</p>
+          <p><a href="https://example.com/reset-password">Reset Password</a></p>
+          ''';
 
     try {
       await send(message, smtpServer);

@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutterapp/Screens/users_screen.dart';
 import 'package:flutterapp/Services/auth_services.dart';
 import 'package:flutterapp/Services/globals.dart';
 import 'package:http/http.dart' as http;
@@ -285,7 +286,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       keyboardType: TextInputType.emailAddress,
                       decoration: InputDecoration(
                         prefixIcon: Icon(Icons.person),
-                        labelText: 'Username',
+                        labelText: 'Email',
                         hintText: '',
                         contentPadding: EdgeInsets.symmetric(
                             vertical: 10.0, horizontal: 20.0),

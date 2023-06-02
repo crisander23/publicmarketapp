@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutterapp/Screens/home_screen.dart';
 import 'package:flutterapp/Screens/login_screen.dart';
@@ -6,7 +8,9 @@ import 'package:flutterapp/Screens/setup_screen.dart';
 import 'package:flutterapp/Screens/settings_screen.dart';
 import 'package:flutterapp/Screens/download_data.dart';
 import 'package:flutterapp/Screens/profile_screen.dart';
-
+import 'package:flutterapp/Services/globals.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 class DownloadData extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -63,7 +67,7 @@ class DownloadData extends StatelessWidget {
                 title: Text('DOWNLOAD DATA',
                     style: TextStyle(color: Colors.black)),
                 onTap: () {
-                  // TODO: navigate to Download Data Screen
+                  // /
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(builder: (_) => DownloadData()),
@@ -116,7 +120,7 @@ class DownloadData extends StatelessWidget {
                 leading: Icon(Icons.logout),
                 title: Text('LOGOUT', style: TextStyle(color: Colors.black)),
                 onTap: () {
-                  // TODO: log out user and navigate to Login Screen
+                  //
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(builder: (_) => LoginScreen()),
@@ -151,7 +155,7 @@ class DownloadData extends StatelessWidget {
                   style: TextStyle(color: Colors.white),
                 ),
                 onPressed: () {
-                  // TODO: handle button press
+                  //
                 },
               ),
             ),
@@ -163,3 +167,51 @@ class DownloadData extends StatelessWidget {
     );
   }
 }
+
+//
+//
+// class DownloadData extends StatefulWidget {
+//   @override
+//   _DownloadDataState createState() => _DownloadDataState();
+// }
+//
+// class _DownloadDataState extends State<DownloadData> {
+//   List<dynamic> tableData = [];
+//
+//   Future<void> _getTableData() async {
+//     final response = await http.get(Uri.parse(baseURL + '/users'));
+//     final data = jsonDecode(response.body);
+//     setState(() {
+//       tableData = data;
+//     });
+//
+//     // Save the data to a file
+//     final file = File('users.json');
+//     file.writeAsStringSync(response.body);
+//   }
+//
+//   @override
+//   void initState() {
+//     super.initState();
+//     _getTableData();
+//   }
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       appBar: AppBar(
+//         title: Text('Table Data'),
+//       ),
+//       body: ListView.builder(
+//         itemCount: tableData.length,
+//         itemBuilder: (BuildContext context, int index) {
+//           final rowData = tableData[index];
+//           return ListTile(
+//             title: Text(rowData['name']),
+//             subtitle: Text(rowData['email']),
+//           );
+//         },
+//       ),
+//     );
+//   }
+// }

@@ -26,7 +26,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _fetchData() async {
-    final response = await http.get(Uri.parse('http://your-api-endpoint-here.com'));
+    final response = await http.get(Uri.parse('http://192.168.1.149/test-api/users/read.php'));
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       setState(() {
